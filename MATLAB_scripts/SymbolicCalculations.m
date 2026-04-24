@@ -3,6 +3,7 @@
 % Variable Definition
 clear; close all; clc
 syms theta
+errors= [theta];
 % Rotation around Z-axis, large angles:
 R_ZN = [cos(theta) -sin(theta) 0; 
      sin(theta) cos(theta)  0
@@ -18,6 +19,7 @@ pretty(R_ZN_approx) ;% latex(R_approx)
 %% H_ZR, where R->X
 syms Zm Zo e_zz e_yz e_xz 
 syms alpha_xz delta_xz delta_zz
+errors= [errors,e_zz,e_yz,e_xz,alpha_xz,delta_xz,delta_zz];
 R_zx = [1 -e_zz e_yz;
        e_zz 1 -e_xz;
        -e_yz e_xz 1];
@@ -34,6 +36,7 @@ pretty(H_ZR)
 %% H_RF, where R->X
 syms Xm Xo e_zx e_yx e_xx 
 syms delta_xx delta_zx
+errors= [errors,e_zx,e_yx,e_xx,delta_xx,delta_zx];
 R_xF = [1 -e_zx e_yx;
        e_zx 1 -e_xx;
        -e_yx e_xx 1];
@@ -49,11 +52,10 @@ H_RF = [R_xF, X_vector;
 pretty(H_RF)
 %% H_CF inverse
 % no translation vector
-
 C_vector = [0; 
             0; 
             0];
-H_CF = [R_ZN, C_vector; 
+H_CF = [R_ZN_approx, C_vector; 
              0, 0, 0, 1];
 pretty(H_CF)
 %% HTM Model - Complete
@@ -64,14 +66,18 @@ T = [T_x; T_y; T_z];
 T_h = [T; 1];
 % HTM multiplication
 P = H_CF * H_RF * H_ZR * T_h;
-latex(P)
+pretty(P);% latex(P_linear)
+%% Symplification, first order angular errors
+% We only consider linear terms
+P_linear = taylor(P, errors, 'Order', 2);
+pretty(P_linear); latex(P_linear)
 %% Exporting symbolic variables as images
 % Using the saveSymToImage function
 % Using 2 inputs will save the image as a PNG file
 % If the 2nd input is a str, then filename==str
 % Else the filename is the 1st input name.
 
-saveSymToImage(X_vector)
+saveSymToImage(P_linear)
 
 function saveSymToImage(symVar, save_name)
     % SAVESYMTOIMAGE Converts a symbolic variable to PNG image using LaTeX.
