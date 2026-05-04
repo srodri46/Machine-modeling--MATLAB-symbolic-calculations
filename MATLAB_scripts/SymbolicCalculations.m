@@ -3,7 +3,7 @@
 % Variable Definition
 clear; close all; clc
 syms theta
-errors= [theta];
+
 % Rotation around Z-axis, large angles:
 R_ZN = [cos(theta) -sin(theta) 0; 
      sin(theta) cos(theta)  0
@@ -19,7 +19,7 @@ pretty(R_ZN_approx) ;% latex(R_approx)
 %% H_ZR, where R->X
 syms Zm Zo e_zz e_yz e_xz 
 syms alpha_xz delta_xz delta_zz
-errors= [errors,e_zz,e_yz,e_xz,alpha_xz,delta_xz,delta_zz];
+errors= [e_zz,e_yz,e_xz,alpha_xz,delta_xz,delta_zz];
 R_zx = [1 -e_zz e_yz;
        e_zz 1 -e_xz;
        -e_yz e_xz 1];
@@ -70,20 +70,58 @@ pretty(P);% latex(P_linear)
 %% Symplification, first order angular errors
 % We only consider linear terms
 P_linear = taylor(P, errors, 'Order', 2);
-pretty(P_linear); latex(P_linear)
+pretty(P_linear); %latex(P_linear)
+%% Numerical evaluation
+% Extraction of first 3 components (x, y, z)
+P_coords = P(1:3);
+vars_in_model = symvar(P_coords);
+num_values = zeros(size(vars_in_model));
+for i = 1:length(vars_in_model)
+    name = char(vars_in_model(i));
+    % Check if the name starts with 'e_', 'alpha' or 'theta'
+    if startsWith(name, {'e_', 'alpha', 'delta'})
+        num_values(i) = randn() * 1e-6;
+    elseif startsWith(name, {'theta', 'X', 'Z', 'T'})
+        if contains(name, 'theta')
+            num_values(i) = deg2rad(45); % 45 degrees in radians
+        else
+            num_values(i) = 10 + rand() * 40; % 10 to 50 mm
+        end
+    else
+        num_values(i) = 0; % For security reasons, anything unknown is 0
+    end
+end
+% Evaluate both models with the same set of values.
+P_num = double(subs(P(1:3), vars_in_model, num_values));
+P_linear_num = double(subs(P_linear(1:3), vars_in_model, num_values));
+% Calculate the difference (Linearization error)
+diff_vector = P_num - P_linear_num;
+% Report of the results
+T = table(P_num, P_linear_num, diff_vector, ...
+    'VariableNames', {'General', 'Lineal', 'Difference'}, ...
+    'RowNames', {'X', 'Y', 'Z'});
+
+disp('--- General and linear model comparison (Same numerical values) ---');
+disp(T);
+% Validation
+max_error = max(abs(diff_vector));
+if max_error < 1e-8
+    fprintf('Successful validation: The linearization error is (%e).\n', max_error);
+else
+    fprintf('Warning: The error is %e.\n', max_error);
+end
 %% Exporting symbolic variables as images
 % Using the saveSymToImage function
 % Using 2 inputs will save the image as a PNG file
 % If the 2nd input is a str, then filename==str
 % Else the filename is the 1st input name.
 
-saveSymToImage(P_linear)
+% saveSymToImage(P_linear)
 
 function saveSymToImage(symVar, save_name)
     % SAVESYMTOIMAGE Converts a symbolic variable to PNG image using LaTeX.
     % String conversion
     Var_name=inputname(1);
-    disp(Var_name)
     str = ['$', latex(symVar), '$'];
     % Figure creation
     f = figure('Visible', 'on');
