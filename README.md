@@ -6,3 +6,5 @@ This repository includes a MATLAB_scripts folder where the main script (Symbolic
 The code can also perform numerical calculations, by assigning numerical values to the variables and errores used in the symbolical modeling, also, a comparative with the general solution and first order error approximation is made. Finally, the function (saveSymToImage) can export in a figure format (png, jpg, pdf) the desired matrix or vector.
 
 The CFRZ Stage folder contain the drawings made on AUTOCAD for the machine modeling, which is the base for the analytic-symbolic implementation in MATLAB.
+
+This repository is public and is licensed under the MIT License, Copyright (c) 2026 srodri46. For any comments or feedback, you can contact me via email srodri46@charlotte.edu
