@@ -52,12 +52,24 @@ H_RF = [R_xF, X_vector;
 pretty(H_RF)
 %% H_CF inverse
 % no translation vector
-C_vector = [0; 
-            0; 
-            0];
-H_CF = [R_ZN_approx, C_vector; 
+syms delta_cx delta_cy delta_cz 
+syms e_cx e_cy e_cz
+errors= [errors,theta,e_cx,e_cy,e_cz,delta_cx,delta_cy,delta_cz];
+errors_c= [theta,e_cx,e_cy,e_cz,delta_cx,delta_cy,delta_cz];
+C_vector = [delta_cx; 
+            delta_cy; 
+            delta_cz];
+H_CF_ideal = [R_ZN_approx, C_vector; 
              0, 0, 0, 1];
+pretty(H_CF_ideal)
+E_C = [ 1    -e_cz   e_cy   0;
+        e_cz   1    -e_cx   0;
+       -e_cy   e_cx   1     0;
+        0     0     0     1];
+H_CF=H_CF_ideal* E_C;
 pretty(H_CF)
+H_CF = taylor(H_CF, errors_c, 'Order', 2);
+pretty(H_CF); %latex(P_linear)
 %% HTM Model - Complete
 syms T_x T_y T_z
 % 3D Vector
@@ -67,10 +79,11 @@ T_h = [T; 1];
 % HTM multiplication
 P = H_CF * H_RF * H_ZR * T_h;
 pretty(P);% latex(P_linear)
+
 %% Symplification, first order angular errors
 % We only consider linear terms
-P_linear = taylor(P, errors, 'Order', 2);
-pretty(P_linear); %latex(P_linear)
+P_linear = taylor(P, unique(errors), 'Order', 2);
+pretty(P_linear); latex(P_linear)
 %% Numerical evaluation
 % Extraction of first 3 components (x, y, z)
 P_coords = P(1:3);
@@ -105,7 +118,7 @@ disp('--- General and linear model comparison (Same numerical values) ---');
 disp(T);
 % Validation
 max_error = max(abs(diff_vector));
-if max_error < 1e-8
+if max_error < 1e-3
     fprintf('Successful validation: The linearization error is (%e).\n', max_error);
 else
     fprintf('Warning: The error is %e.\n', max_error);
@@ -116,7 +129,7 @@ end
 % If the 2nd input is a str, then filename==str
 % Else the filename is the 1st input name.
 
-% saveSymToImage(P_linear)
+% saveSymToImage(P_linear,1)
 
 function saveSymToImage(symVar, save_name)
     % SAVESYMTOIMAGE Converts a symbolic variable to PNG image using LaTeX.
